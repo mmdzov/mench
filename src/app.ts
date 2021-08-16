@@ -7,9 +7,8 @@ import {
   PlayerManch,
 } from "./interfaces";
 import Rules from "./rules.js";
-// import { manch, root } from "./define";
-export const manch = document.querySelector("#manch") as HTMLDivElement;
-export const root = document.getElementById("root") as HTMLDivElement;
+const manch = document.querySelector("#manch") as HTMLDivElement;
+const root = document.getElementById("root") as HTMLDivElement;
 let rules = new Rules();
 
 const pick: manchScheme[] = [];
@@ -38,7 +37,7 @@ let playerNames: string[] = [
   "shirin",
   "roberto",
 ];
-export function GeneratePlayers(count: number = 4) {
+function GeneratePlayers(count: number = 4) {
   let plyrs: Player[] = [];
   for (let i: number = 1; i <= count; i++) {
     const manchs: PlayerManch[] = [];
@@ -214,11 +213,9 @@ function switchToNextPlayer() {
 }
 
 const handleSelectManch = (e: Event) => {
-  console.log(rules.runned);
   if (rules.runned && !rules.award) return;
   if (lastManchPicked?.childElementCount === 6 && !pushBeadInGame) return;
   // if (rules.tryPickManch === 3) return;
-  // console.log(rules.tryPickManch)
   rules.handleAwardAfter6(lastManchPicked);
   PickManch();
   pickedManch = true;
@@ -245,7 +242,6 @@ const handleSelectManch = (e: Event) => {
     // manch.appendChild(elements[5]);
     // lastManchPicked = elements[5];
     if (expire < Date.now()) {
-      // console.log(returnPick);
       if (hasNotInGameManchs) {
         // if(award)
         if (lastManchPicked.children.length === 6) {
@@ -308,7 +304,7 @@ function runBeadToGame(
     (item) => item.id === beadUid
   );
   players[index].manchs.inGame.push(players[index].manchs.manchs[beadIndex]);
-  console.log(players[index].manchs, beadUid, playerIndex, playerId);
+  rules.handleThrowEnemyBead(bead, players);
   const manch = document.querySelector(".manch") as HTMLDivElement;
   manch.style.boxShadow = "unset";
   returnPick = true;
@@ -335,7 +331,6 @@ function handleRunBead<x extends Handlers.playerSign>({
     (item) => item.hasActive
   );
   const forward = beadPlayers[playerIndex].list[index + 1 + count].element;
-  console.log(forward);
   beadPlayers[playerIndex].list = beadPlayers[playerIndex].list.map((item) => {
     item.hasActive = false;
     return item;
@@ -345,11 +340,9 @@ function handleRunBead<x extends Handlers.playerSign>({
   const unitBeadInGame = document.querySelector(
     `.beadInGame[data-beadgameid="${beadId}:${playerId}:${beadUid}"]`
   ) as HTMLDivElement;
-  console.log(unitBeadInGame);
   unitBeadInGame.style.left = `${xy.x! + 3}px`;
   unitBeadInGame.style.top = `${xy.y! + 3}px`;
-  let result = rules.handleThrowEnemyBead(unitBeadInGame, players);
-  // players[playerIndex].manchs.inGame = result;
+  rules.handleThrowEnemyBead(unitBeadInGame, players);
   const manch = document.querySelector(".manch") as HTMLDivElement;
   manch.style.boxShadow = "unset";
   if (lastManchPicked.childElementCount === 6) {
