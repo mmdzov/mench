@@ -40,7 +40,7 @@ export interface BeadList {
 
 export namespace Handlers {
   export interface playerSign {
-    e?: Event;
+    e?: any;
     beadId: number;
     playerId: number;
     playerIndex: number;

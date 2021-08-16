@@ -98,13 +98,17 @@ function GeneratePlayers(count: number = 4) {
     if (plyrs[i]?.turn) {
       playerImg.className = "turn";
     }
-    for (let b: number = 1; b <= plyrs[i]?.manchs?.manchs.length; b++) {
+    for (let b: number = 0; b < plyrs[i]?.manchs?.manchs.length; b++) {
       const bead = document.createElement("div") as HTMLDivElement;
       bead.className = "bead";
       bead.style.background = plyrs[i].color;
       bead.setAttribute("data-bead-id", `${b}`);
+      bead.setAttribute(
+        "data-uinqueId",
+        `${plyrs[i]?.id}:${plyrs[i]?.manchs?.manchs[b].id}`
+      );
       bead.addEventListener("click", (e: Event) =>
-        runBeadToGame(e, b, plyrs[i]?.id, i, plyrs[i]?.manchs?.manchs[i].id)
+        runBeadToGame(e, b, plyrs[i]?.id, i, plyrs[i]?.manchs?.manchs[b].id)
       );
       beadContainer.appendChild(bead);
     }
@@ -317,28 +321,27 @@ function runBeadToGame(
 
 function handleRunBead<x extends Handlers.playerSign>({
   e,
-  beadId,
+  beadId: beadIndex,
   playerId,
   playerIndex,
   beadUid,
 }: x) {
   const plyrIndex = players.findIndex((item) => item.id === playerId);
   if (!players[plyrIndex].turn) return;
-  // if (rules.award) return;
 
   const count = lastManchPicked.childElementCount;
-  const index = beadPlayers[playerIndex].list.findIndex(
-    (item) => item.hasActive
+  const currentBeadIndex = players[plyrIndex].manchs.inGame.findIndex(
+    (item) => item.id === beadUid
   );
-  const forward = beadPlayers[playerIndex].list[index + 1 + count].element;
-  beadPlayers[playerIndex].list = beadPlayers[playerIndex].list.map((item) => {
-    item.hasActive = false;
-    return item;
-  });
-  beadPlayers[playerIndex].list[index + count].hasActive = true;
+  players[plyrIndex].manchs.inGame[currentBeadIndex].homeNumber += count;
+  const forward =
+    beadPlayers[plyrIndex].list[
+      players[plyrIndex].manchs.inGame[currentBeadIndex].homeNumber + 1
+    ].element;
+
   let xy: DOMRect = forward.getBoundingClientRect();
   const unitBeadInGame = document.querySelector(
-    `.beadInGame[data-beadgameid="${beadId}:${playerId}:${beadUid}"]`
+    `.beadInGame[data-beadgameid="${beadIndex}:${playerId}:${beadUid}"]`
   ) as HTMLDivElement;
   unitBeadInGame.style.left = `${xy.x! + 3}px`;
   unitBeadInGame.style.top = `${xy.y! + 3}px`;
