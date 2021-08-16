@@ -19,6 +19,7 @@ let award: boolean = false;
 let returnPick: boolean = false;
 let beadPlayers: { playerId: number; list: BeadList[] }[] = [];
 let lastManchPicked: Element;
+let runned: boolean | null = null;
 let luckyCount: number = 3;
 let pickedManch: boolean = false;
 let pushBeadInGame: boolean = false;
@@ -212,6 +213,7 @@ function switchToNextPlayer() {
       break;
     }
   }
+  runned = null;
   pushBeadInGame = false;
   pickedManch = true;
 }
@@ -219,6 +221,7 @@ function switchToNextPlayer() {
 const handleSelectManch = (e: Event) => {
   if (rules.runned && !rules.award) return;
   if (lastManchPicked?.childElementCount === 6 && !pushBeadInGame) return;
+  if (runned === false) return;
   // if (rules.tryPickManch === 3) return;
   rules.handleAwardAfter6(lastManchPicked);
   PickManch();
@@ -237,7 +240,7 @@ const handleSelectManch = (e: Event) => {
   const expire: number = Date.now() + 0.5 * 1000;
   let interval = setInterval(() => {
     let index = players.findIndex((item) => item.turn);
-    const hasNotInGameManchs = players[index].manchs.inGame.length === 0;
+    const playerDeadline = players[index].deadline;
     const els = combineArray(elements);
     manch.style.boxShadow = "unset";
     manch.innerHTML = "";
@@ -246,8 +249,7 @@ const handleSelectManch = (e: Event) => {
     // manch.appendChild(elements[5]);
     // lastManchPicked = elements[5];
     if (expire < Date.now()) {
-      if (hasNotInGameManchs) {
-        // if(award)
+      if (playerDeadline === 3) {
         if (lastManchPicked.children.length === 6) {
           manch.style.boxShadow = "0 2px 10px -1px #673ab7";
         }
@@ -262,6 +264,8 @@ const handleSelectManch = (e: Event) => {
         }
         luckyRun += 1;
         rules.tryPickManch += 1;
+      } else {
+        runned = false;
       }
       clearInterval(interval);
       return;
@@ -276,7 +280,34 @@ function runBeadToGame(
   playerIndex: number,
   beadUid: number
 ) {
-  if (!lastManchPicked) return;
+  let preventToPlayGame: boolean = false;
+  if (lastManchPicked?.childElementCount !== 6) return;
+  const currentManch = document.querySelectorAll(`#root > svg > circle`);
+  currentManch.forEach((item) => {
+    if (+item.getAttribute("data-home")! === playerIndex + 1) {
+      const beads = document.querySelectorAll(".beadBackground > div");
+      beads.forEach((beadItem) => {
+        const bdId = beadItem.getAttribute("data-beadgameid")?.split(":");
+        if (bdId && +bdId[1] === playerId) {
+          const beadItemPos = rules
+            .detectBeadWithStyle(beadItem)
+            .split(/[^0-9\.]/g)
+            .filter((filterItem: string) => filterItem && filterItem !== "p");
+          let circlePos = item?.getBoundingClientRect();
+          if (
+            +Number(beadItemPos[0]).toFixed(2) ===
+              +Number(circlePos.x + 3).toFixed(2) &&
+            +Number(beadItemPos[1]).toFixed(2) ===
+              +Number(circlePos.y + 3).toFixed(2)
+          ) {
+            preventToPlayGame = true;
+          }
+        }
+      });
+    }
+  });
+  if (runned) return;
+  if (preventToPlayGame) return;
   const index = players.findIndex((item) => item?.id === playerId);
   const activeUserIndex = players.findIndex((item) => item?.turn);
   if (+e.path[2].getAttribute("data-id") !== players[activeUserIndex].id)
@@ -315,6 +346,7 @@ function runBeadToGame(
   rules.runned = false;
   rules.award = true;
   pushBeadInGame = true;
+  runned = true;
   luckyRun = 2;
   rules.tryPickManch += 1;
 }
@@ -328,7 +360,7 @@ function handleRunBead<x extends Handlers.playerSign>({
 }: x) {
   const plyrIndex = players.findIndex((item) => item.id === playerId);
   if (!players[plyrIndex].turn) return;
-
+  if (runned) return;
   const count = lastManchPicked.childElementCount;
   const currentBeadIndex = players[plyrIndex].manchs.inGame.findIndex(
     (item) => item.id === beadUid
@@ -346,13 +378,18 @@ function handleRunBead<x extends Handlers.playerSign>({
   unitBeadInGame.style.left = `${xy.x! + 3}px`;
   unitBeadInGame.style.top = `${xy.y! + 3}px`;
   rules.handleThrowEnemyBead(unitBeadInGame, players);
+  console.log(players);
+
   const manch = document.querySelector(".manch") as HTMLDivElement;
   manch.style.boxShadow = "unset";
   if (lastManchPicked.childElementCount === 6) {
     rules.runned = false;
     rules.award = true;
     rules.tryPickManch += 1;
-  } else switchToNextPlayer();
+    runned = true;
+  } else {
+    switchToNextPlayer();
+  }
 }
 
 window.onload = () => {

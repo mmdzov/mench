@@ -28,18 +28,18 @@ class Rules {
     }
     return;
   }
+  detectBeadWithStyle(item: Element) {
+    let loopItem: any = item.getAttribute("style")?.split("; ");
+    loopItem?.shift();
+    return loopItem?.join(";");
+  }
   handleThrowEnemyBead(bead: Element, players: Player[]) {
-    function detectMatchItems(item: Element) {
-      let loopItem: any = item.getAttribute("style")?.split("; ");
-      loopItem.shift();
-      return loopItem.join(";");
-    }
     const beads = document.querySelectorAll(".beadBackground > div");
     beads.forEach((item) => {
       if (
         this.manchDetails(item).playerId !== this.manchDetails(bead).playerId
       ) {
-        if (detectMatchItems(item) === detectMatchItems(bead)) {
+        if (this.detectBeadWithStyle(item) === this.detectBeadWithStyle(bead)) {
           let detail = this.manchDetails(item);
           const playerIndex = players.findIndex(
             (item) => item.id === detail.playerId
@@ -55,6 +55,16 @@ class Rules {
           item.remove();
           return;
         }
+      }
+    });
+    this.handleListeningBeads(players);
+  }
+  handleListeningBeads(players: Player[]) {
+    players.forEach((item) => {
+      if (item.manchs.inGame.length > 0) {
+        item.deadline = 1;
+      } else {
+        item.deadline = 3;
       }
     });
   }
