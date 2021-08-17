@@ -38,6 +38,12 @@ export interface BeadList {
   hasMain: boolean;
 }
 
+export interface InsideManchs extends Omit<BeadList, "hasActive" | "hasMain"> {
+  playerId: number;
+  playerIndex: number;
+  position: DOMRect;
+}
+
 export namespace Handlers {
   export interface playerSign {
     e?: any;

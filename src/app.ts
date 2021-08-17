@@ -1,6 +1,7 @@
 import {
   BeadList,
   Handlers,
+  InsideManchs,
   Manchs,
   manchScheme,
   Player,
@@ -15,6 +16,7 @@ const pick: manchScheme[] = [];
 let players: Player[] = [];
 let luckyRun: number = 1;
 let beadReplace: BeadList[] = [];
+let insideManchList: InsideManchs[] = [];
 let award: boolean = false;
 let returnPick: boolean = false;
 let beadPlayers: { playerId: number; list: BeadList[] }[] = [];
@@ -171,6 +173,29 @@ function PickManch() {
   }
 }
 
+function generatInsideManchs() {
+  const allManchs = document.querySelectorAll("#root > svg > circle");
+  allManchs.forEach((item) => {
+    let manchData: string[] | undefined = item
+      .getAttribute("data-home")
+      ?.split(":");
+    if (manchData && manchData?.length > 1) {
+      let playerIndex: number = +manchData[0];
+      let index: number = +manchData[1];
+      let position: DOMRect = item.getBoundingClientRect();
+      let playerId: number = players[playerIndex].id;
+      let element: Element = item;
+      insideManchList?.push({
+        element,
+        position,
+        playerIndex,
+        playerId,
+        index,
+      });
+    }
+  });
+}
+
 const combineArray = (arr: Element[]) => {
   let newData = Array(arr.length);
 
@@ -219,11 +244,11 @@ function switchToNextPlayer() {
 }
 
 const handleSelectManch = (e: Event) => {
-  if (rules.runned && !rules.award) return;
-  if (lastManchPicked?.childElementCount === 6 && !pushBeadInGame) return;
-  if (runned === false) return;
+  if (rules.runned && !rules.award) return; // !test
+  if (lastManchPicked?.childElementCount === 6 && !pushBeadInGame) return; //!test
+  if (runned === false) return; //!test
   // if (rules.tryPickManch === 3) return;
-  rules.handleAwardAfter6(lastManchPicked);
+  rules.handleAwardAfter6(lastManchPicked); //!test
   PickManch();
   pickedManch = true;
   let elements: Element[] = [];
@@ -241,11 +266,11 @@ const handleSelectManch = (e: Event) => {
   let interval = setInterval(() => {
     let index = players.findIndex((item) => item.turn);
     const playerDeadline = players[index].deadline;
-    const els = combineArray(elements);
+    const els = combineArray(elements); //! test
     manch.style.boxShadow = "unset";
     manch.innerHTML = "";
-    manch.appendChild(els[0]);
-    lastManchPicked = els[0];
+    manch.appendChild(els[0]); //!test
+    lastManchPicked = els[0]; //! test
     // manch.appendChild(elements[5]);
     // lastManchPicked = elements[5];
     if (expire < Date.now()) {
@@ -281,7 +306,7 @@ function runBeadToGame(
   beadUid: number
 ) {
   let preventToPlayGame: boolean = false;
-  if (lastManchPicked?.childElementCount !== 6) return;
+  if (lastManchPicked?.childElementCount !== 6) return; //! test
   const currentManch = document.querySelectorAll(`#root > svg > circle`);
   currentManch.forEach((item) => {
     if (+item.getAttribute("data-home")! === playerIndex + 1) {
@@ -306,13 +331,13 @@ function runBeadToGame(
       });
     }
   });
-  if (runned) return;
-  if (preventToPlayGame) return;
+  if (runned) return; //! test
+  if (preventToPlayGame) return; //! test
   const index = players.findIndex((item) => item?.id === playerId);
-  const activeUserIndex = players.findIndex((item) => item?.turn);
+  const activeUserIndex = players.findIndex((item) => item?.turn); //! test
   if (+e.path[2].getAttribute("data-id") !== players[activeUserIndex].id)
-    return;
-  if (lastManchPicked.children.length !== 6 && !rules.award) return;
+    return; //! test
+  if (lastManchPicked.children.length !== 6 && !rules.award) return; //! test
   const sit = document.querySelector(
     `#root svg [data-home="${playerIndex + 1}"]`
   );
@@ -359,8 +384,8 @@ function handleRunBead<x extends Handlers.playerSign>({
   beadUid,
 }: x) {
   const plyrIndex = players.findIndex((item) => item.id === playerId);
-  if (!players[plyrIndex].turn) return;
-  if (runned) return;
+  if (!players[plyrIndex].turn) return; //!  test
+  if (runned) return; //! test
   const count = lastManchPicked.childElementCount;
   const currentBeadIndex = players[plyrIndex].manchs.inGame.findIndex(
     (item) => item.id === beadUid
@@ -369,32 +394,67 @@ function handleRunBead<x extends Handlers.playerSign>({
   const forward =
     beadPlayers[plyrIndex].list[
       players[plyrIndex].manchs.inGame[currentBeadIndex].homeNumber + 1
-    ].element;
-
-  let xy: DOMRect = forward.getBoundingClientRect();
+    ];
   const unitBeadInGame = document.querySelector(
     `.beadInGame[data-beadgameid="${beadIndex}:${playerId}:${beadUid}"]`
   ) as HTMLDivElement;
-  unitBeadInGame.style.left = `${xy.x! + 3}px`;
-  unitBeadInGame.style.top = `${xy.y! + 3}px`;
-  rules.handleThrowEnemyBead(unitBeadInGame, players);
-  console.log(players);
+  try {
+    let xy: DOMRect = forward?.element?.getBoundingClientRect();
+    unitBeadInGame.style.left = `${xy.x! + 3}px`;
+    unitBeadInGame.style.top = `${xy.y! + 3}px`;
+    rules.handleThrowEnemyBead(unitBeadInGame, players);
+    console.log(players);
 
-  const manch = document.querySelector(".manch") as HTMLDivElement;
-  manch.style.boxShadow = "unset";
-  if (lastManchPicked.childElementCount === 6) {
-    rules.runned = false;
-    rules.award = true;
-    rules.tryPickManch += 1;
-    runned = true;
-  } else {
-    switchToNextPlayer();
+    const manch = document.querySelector(".manch") as HTMLDivElement;
+    manch.style.boxShadow = "unset";
+    beadPlayers[plyrIndex].list.forEach((item) => (item.hasActive = false));
+    beadPlayers[plyrIndex].list[
+      players[plyrIndex].manchs.inGame[currentBeadIndex].homeNumber + 1
+    ].hasActive = true;
+    if (lastManchPicked.childElementCount === 6) {
+      rules.runned = false;
+      rules.award = true;
+      rules.tryPickManch += 1;
+      runned = true;
+    } else {
+      switchToNextPlayer();
+    }
+  } catch (error) {
+    if (!forward) {
+      const beadsIndex = beadPlayers.findIndex(
+        (item) => item.playerId === playerId
+      );
+      const beadList = beadPlayers[beadsIndex].list;
+      let mainIndex = beadList.findIndex((item) => item.hasMain);
+      const beadActiveIndex = beadList.findIndex((item) => item.hasActive);
+      let beadListAfterActiveItem = beadList.slice(
+        -(beadList[mainIndex].index - beadList[beadActiveIndex].index)
+      );
+      const insidePlayerManchs = insideManchList.filter(
+        (item) => item.playerId === playerId
+      );
+      insidePlayerManchs.forEach((item) => {
+        if (
+          item.index ===
+          lastManchPicked.childElementCount -
+            (beadListAfterActiveItem.length - 1)
+        ) {
+          unitBeadInGame.style.left = `${item.position.x! + 3}px`;
+          unitBeadInGame.style.top = `${item.position.y! + 3}px`;
+        }
+        players[playerIndex].manchs.finished.push(
+          players[playerIndex].manchs.manchs[currentBeadIndex]
+        );
+      });
+    }
   }
 }
 
 window.onload = () => {
   GeneratePlayers();
   PickManch();
+  generatInsideManchs();
+  console.log(insideManchList);
 };
 
 manch.addEventListener("click", handleSelectManch);
