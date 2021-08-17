@@ -403,8 +403,6 @@ function handleRunBead<x extends Handlers.playerSign>({
     unitBeadInGame.style.left = `${xy.x! + 3}px`;
     unitBeadInGame.style.top = `${xy.y! + 3}px`;
     rules.handleThrowEnemyBead(unitBeadInGame, players);
-    console.log(players);
-
     const manch = document.querySelector(".manch") as HTMLDivElement;
     manch.style.boxShadow = "unset";
     beadPlayers[plyrIndex].list.forEach((item) => (item.hasActive = false));
@@ -454,7 +452,6 @@ window.onload = () => {
   GeneratePlayers();
   PickManch();
   generatInsideManchs();
-  console.log(insideManchList);
 };
 
 manch.addEventListener("click", handleSelectManch);
